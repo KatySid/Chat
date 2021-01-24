@@ -1,5 +1,7 @@
 package server;
 
+import commands.Command;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -44,7 +46,6 @@ public class Server {
             c.sendMsg(message);
         }
     }
-
     void subscribe(ClientHandler clientHandler){
         clients.add(clientHandler);
     }
@@ -56,4 +57,17 @@ public class Server {
     public AuthService getAuthService() {
         return authService;
     }
+
+    public void sendPrivateMsg(ClientHandler clientHandler, String addressMessage, String privateMsg) {
+        for (ClientHandler c : clients) {
+            if (c.getNickname().equals(addressMessage)) {
+                String msg = String.format("[%s] to [%s] : %s", clientHandler.getNickname(), c.getNickname(), privateMsg);
+                c.sendMsg(msg);
+                clientHandler.sendMsg(msg);
+                return;
+            }
+        }
+        clientHandler.sendMsg(String.format("Client [%s] not found", addressMessage));
+    }
+
 }
