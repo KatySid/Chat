@@ -6,6 +6,8 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.net.SocketPermission;
+import java.net.SocketTimeoutException;
 
 public class ClientHandler {
     private Server server;
@@ -24,6 +26,7 @@ public class ClientHandler {
 
             new Thread(() -> {
                 try {
+                    socket.setSoTimeout(120000);
                     //цикл аутентификации
                     while (true) {
                         String str = in.readUTF();
@@ -39,6 +42,7 @@ public class ClientHandler {
                                     sendMsg(Command.AUTH_OK + " " + nickname);
                                     server.subscribe(this);
                                     System.out.println("client " + nickname + " connected " + socket.getRemoteSocketAddress());
+                                    socket.setSoTimeout(0);
                                     break;
                                 } else {
                                     sendMsg("С этим логином уже авторизовались ");
@@ -52,6 +56,18 @@ public class ClientHandler {
                             throw new RuntimeException("client disconnected");
 
                         }
+                        if (str.startsWith(Command.REG)) {
+                            String[] tokens = str.split("\\s");
+                            if (tokens.length < 4) {
+                                continue;
+                            }
+                            boolean isRegistered = server.getAuthService().registration(tokens[1], tokens[2], tokens[3]);
+                            if (isRegistered) {
+                                sendMsg(Command.REG_OK);
+                            } else {
+                                sendMsg(Command.REG_NO);
+                            }
+                        }
                     }
 
                     //цикл работы
@@ -60,7 +76,6 @@ public class ClientHandler {
 
                         if (str.equals(Command.END)) {
                             sendMsg(Command.END);
-                            System.out.println("client disconnected");
                             break;
                         }
                         if (str.startsWith(Command.PRV_MSG)) {
@@ -74,12 +89,15 @@ public class ClientHandler {
                             server.broadcastMsg(this, str);
                         }
                     }
+                }catch (SocketTimeoutException e){
+                    sendMsg(Command.END);
                 } catch (RuntimeException e){
                     System.out.println(e.getMessage());
                 } catch (IOException e) {
                     e.printStackTrace();
                 } finally {
                     server.unsubscribe(this);
+                    System.out.println("client disconnected");
                     try {
                         socket.close();
                     } catch (IOException e) {

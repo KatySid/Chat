@@ -54,6 +54,7 @@ public class Controller implements Initializable {
 
     private Stage stage;
     private Stage regStage;
+    private RegController regController;
 
     public void setAuthenticated(boolean authenticated) {
         this.authenticated = authenticated;
@@ -114,6 +115,12 @@ public class Controller implements Initializable {
                             if (str.equals(Command.END)) {
                                 System.out.println("client disconnected");
                                 throw new RuntimeException("server disconnected us");
+                            }
+                            if(str.startsWith(Command.REG_OK)){
+                            regController.regOK();
+                            }
+                            if (str.startsWith(Command.REG_NO)){
+                            regController.regNO();
                             }
                         } else {
                             textArea.appendText(str + "\n");
@@ -220,7 +227,8 @@ public class Controller implements Initializable {
             regStage = new Stage();
             regStage.setTitle("GeekChat registration");
             regStage.setScene(new Scene(root, 400, 350));
-            ((RegController)fxmlLoader.getController()).setController(this);
+            regController = fxmlLoader.getController();
+            regController.setController(this);
             regStage.initModality(Modality.APPLICATION_MODAL);
         } catch (IOException e) {
             e.printStackTrace();
@@ -228,5 +236,16 @@ public class Controller implements Initializable {
 
 
     }
+     public void tryToReg(String login, String password, String nickname){
+         if (socket == null || socket.isClosed()) {
+             connect();
+         }
+        String msg = String.format("%s %s %s %s", Command.REG, login, password, nickname);
+         try {
+             out.writeUTF(msg);
+         } catch (IOException e) {
+             e.printStackTrace();
+         }
+     }
 
 }

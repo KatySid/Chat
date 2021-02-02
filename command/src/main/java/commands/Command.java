@@ -6,5 +6,8 @@ public class Command {
     public static final String AUTH = "/auth";
     public static final String CLIENT_LIST = "/clientlist";
     public static final String PRV_MSG = "/w";
+    public static final String REG = "/reg";
+    public static final String REG_OK = "/regOK";
+    public static final String REG_NO = "/regNO";
 
 }
