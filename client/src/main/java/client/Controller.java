@@ -3,13 +3,21 @@ package client;
 import commands.Command;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.control.ListView;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -21,13 +29,15 @@ import java.util.ResourceBundle;
 
 public class Controller implements Initializable {
     @FXML
-    public HBox authPanel;
+    private HBox authPanel;
     @FXML
-    public HBox msgPanel;
+    private HBox msgPanel;
     @FXML
-    public TextField loginField;
+    private TextField loginField;
     @FXML
-    public PasswordField passwordField;
+    private PasswordField passwordField;
+    @FXML
+    private ListView<String> clientList;
     @FXML
     private TextArea textArea;
     @FXML
@@ -37,17 +47,20 @@ public class Controller implements Initializable {
     private DataInputStream in;
     private DataOutputStream out;
     private final String IP_ADDRESS = "localhost";
-    private final int PORT = 8189;
+    private final int PORT = 8190;
 
     private boolean authenticated;
     private String nickname;
 
     private Stage stage;
+    private Stage regStage;
 
     public void setAuthenticated(boolean authenticated) {
         this.authenticated = authenticated;
         msgPanel.setVisible(authenticated);
         msgPanel.setManaged(authenticated);
+        clientList.setVisible(authenticated);
+        clientList.setManaged(authenticated);
         authPanel.setVisible(!authenticated);
         authPanel.setManaged(!authenticated);
         if (!authenticated) {
@@ -61,6 +74,19 @@ public class Controller implements Initializable {
     public void initialize(URL location, ResourceBundle resources) {
         Platform.runLater(()->{
             stage = (Stage) textArea.getScene().getWindow();
+            stage.setOnCloseRequest(new EventHandler<WindowEvent>() {
+                @Override
+                public void handle(WindowEvent windowEvent) {
+                    System.out.println("bye");
+                    if (socket!=null && !socket.isClosed()){
+                        try {
+                            out.writeUTF(Command.END);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            });
         });
 
         setAuthenticated(false);
@@ -97,14 +123,28 @@ public class Controller implements Initializable {
                     //цикл работы
                     while (true) {
                         String str = in.readUTF();
+                        if(str.startsWith("/")){
+                            if (str.equals(Command.END)) {
+                                System.out.println("client disconnected");
+                                break;
+                            }
+                            if (str.startsWith(Command.CLIENT_LIST)){
+                                String[] tokens = str.split("\\s");
+                                Platform.runLater(()-> {
+                                    clientList.getItems().clear();
+                                    for (int i = 1; i < tokens.length; i++) {
+                                        clientList.getItems().add(tokens[i]);
+                                    }
+                                });
 
-                        if (str.equals(Command.END)) {
-                            System.out.println("client disconnected");
-                            break;
+                            }
+                        } else {
+                            textArea.appendText(str + "\n");
                         }
 
-                        textArea.appendText(str + "\n");
                     }
+                }catch (RuntimeException e){
+                    System.out.println(e.getMessage());
                 } catch (IOException e) {
                     e.printStackTrace();
                 } finally {
@@ -159,4 +199,34 @@ public class Controller implements Initializable {
             });
         }
     }
+
+    public void clientListClicked(MouseEvent mouseEvent) {
+        String reciever = clientList.getSelectionModel().getSelectedItem();
+        textField.setText(String.format("%s %s ", Command.PRV_MSG, reciever));
+    }
+
+    public void registration(ActionEvent actionEvent) {
+    if(regStage == null){
+        createRegStage();
+    }
+    regStage.show();
+    }
+
+    private void createRegStage() {
+
+        try {
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/reg.fxml"));
+            Parent root = fxmlLoader.load();
+            regStage = new Stage();
+            regStage.setTitle("GeekChat registration");
+            regStage.setScene(new Scene(root, 400, 350));
+            ((RegController)fxmlLoader.getController()).setController(this);
+            regStage.initModality(Modality.APPLICATION_MODAL);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
+    }
+
 }
