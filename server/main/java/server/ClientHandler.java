@@ -80,6 +80,22 @@ public class ClientHandler {
                             sendMsg(Command.END);
                             break;
                         }
+                        if(str.startsWith(Command.CH_NICK)){
+                            String clientNick;
+                            String[] token = str.split("\\s+", 2);
+                            if(token.length!=2 && token[1].contains(" ")){
+                                sendMsg("Ник не должен содержать пробелы");
+                                continue;
+                            }
+                            if (server.getAuthService().changeNickname(this.nickname, token[1])){
+                                sendMsg("Ваш ник изменен на "+ token[1]);
+                                sendMsg(Command.CH_TITLE +" "+ token[1]);
+                                this.nickname = token[1];
+                                server.broadcastClientList();
+                            }else{
+                                sendMsg("Ник "+ token[1]+ " существует");
+                            }
+                        }
                         if (str.startsWith(Command.PRV_MSG)) {
                             String addressMessage;
                             String privateMsg;
