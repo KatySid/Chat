@@ -43,6 +43,8 @@ public class ClientHandler {
                                     server.subscribe(this);
                                     System.out.println("client " + nickname + " connected " + socket.getRemoteSocketAddress());
                                     socket.setSoTimeout(0);
+                                    //Здесь должна быть отправка истории 100 последних сообщений.
+                                    //sendMsg(getMsgForNick (nickname);
                                     break;
                                 } else {
                                     sendMsg("С этим логином уже авторизовались ");
