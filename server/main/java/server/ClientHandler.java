@@ -43,6 +43,7 @@ public class ClientHandler {
                                     server.subscribe(this);
                                     System.out.println("client " + nickname + " connected " + socket.getRemoteSocketAddress());
                                     socket.setSoTimeout(0);
+                                    //здесь открываем поток чтения из файла и поток записи в файл
                                     //Здесь должна быть отправка истории 100 последних сообщений.
                                     //sendMsg(getMsgForNick (nickname);
                                     break;
@@ -66,6 +67,7 @@ public class ClientHandler {
                             boolean isRegistered = server.getAuthService().registration(tokens[1], tokens[2], tokens[3]);
                             if (isRegistered) {
                                 sendMsg(Command.REG_OK);
+                                // тут создаем файл для хранения истории
                             } else {
                                 sendMsg(Command.REG_NO);
                             }
@@ -103,8 +105,10 @@ public class ClientHandler {
                             addressMessage = msgArray[1];
                             privateMsg = msgArray[2];
                             server.sendPrivateMsg(this, addressMessage, privateMsg);
+                            //тут пишем строку в файл истории этого клиента
                         } else {
                             server.broadcastMsg(this, str);
+                            //тут пишем строку в файл истории этого клиента
                         }
                     }
                 }catch (SocketTimeoutException e){
