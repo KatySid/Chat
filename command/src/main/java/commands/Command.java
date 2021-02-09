@@ -11,5 +11,6 @@ public class Command {
     public static final String REG_NO = "/regNO";
     public static final String CH_NICK = "/chnick";
     public static final String CH_TITLE = "/chtitle";
+    public static final String HISTORY = "/history";
 
 }

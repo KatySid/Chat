@@ -19,11 +19,11 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.Socket;
 import java.net.URL;
+import java.nio.file.Files;
+import java.util.List;
 import java.util.ResourceBundle;
 
 
@@ -55,6 +55,8 @@ public class Controller implements Initializable {
     private Stage stage;
     private Stage regStage;
     private RegController regController;
+    private File historyFile;
+    private FileWriter writeToFile;
 
     public void setAuthenticated(boolean authenticated) {
         this.authenticated = authenticated;
@@ -99,6 +101,7 @@ public class Controller implements Initializable {
             in = new DataInputStream(socket.getInputStream());
             out = new DataOutputStream(socket.getOutputStream());
 
+
             new Thread(() -> {
                 try {
                     //цикл аутентификации
@@ -109,6 +112,8 @@ public class Controller implements Initializable {
                             if (str.startsWith(Command.AUTH_OK)) {
                                 nickname = str.split("\\s")[1];
                                 setAuthenticated(true);
+                                createFileHistory();
+                                returnHistory();
                                 break;
                             }
 
@@ -148,11 +153,15 @@ public class Controller implements Initializable {
                             if (str.startsWith(Command.CH_TITLE)){
                                 String[] token = str.split("\\s");
                                 nickname = token[1];
+                                writeToFile.close();
+                                createFileHistory();
                                 setTitle(nickname);
                              }
                         }
                         else {
                             textArea.appendText(str + "\n");
+                            writeToFile.write(str+"\r\n");
+                            writeToFile.flush();
                         }
 
                     }
@@ -164,6 +173,7 @@ public class Controller implements Initializable {
                     setAuthenticated(false);
                     try {
                         socket.close();
+                        writeToFile.close();
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -253,5 +263,40 @@ public class Controller implements Initializable {
              e.printStackTrace();
          }
      }
+    private void createFileHistory(){
+        File folder = new File("history_clients");
+        System.out.println(folder.getName());
+        if(!folder.exists()){
+        folder.mkdir();
+        }
+        historyFile = new File(String.format("%s/history_%s.txt", folder.getName(), this.nickname));
+        try {
+            if (!historyFile.exists()) {
+                    historyFile.createNewFile();
+                }
+                writeToFile = new FileWriter( historyFile, true);
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+    }
+
+    private void returnHistory(){
+        try{
+            List<String> hist = Files.readAllLines( historyFile.getAbsoluteFile().toPath());
+            if(hist.size()<=100 && hist.size()>0){
+               for (int i = 0; i < hist.size(); i++) {
+                    textArea.appendText(hist.get(i)+"\n");
+                }
+              }
+            if (hist.size()>100) {
+                for (int i = hist.size()-100; i < hist.size(); i++) {
+                    textArea.appendText(hist.get(i)+"\n");
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
 }

@@ -4,10 +4,12 @@ import commands.Command;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketPermission;
 import java.net.SocketTimeoutException;
+import java.util.concurrent.ExecutorService;
 
 public class ClientHandler {
     private Server server;
@@ -16,11 +18,13 @@ public class ClientHandler {
     private DataOutputStream out;
     private String nickname;
     private String login;
+    private File historyFile;
 
     public ClientHandler(Server server, Socket socket) {
         try {
             this.server = server;
             this.socket = socket;
+
             in = new DataInputStream(socket.getInputStream());
             out = new DataOutputStream(socket.getOutputStream());
 
@@ -43,8 +47,6 @@ public class ClientHandler {
                                     server.subscribe(this);
                                     System.out.println("client " + nickname + " connected " + socket.getRemoteSocketAddress());
                                     socket.setSoTimeout(0);
-                                    //Здесь должна быть отправка истории 100 последних сообщений.
-                                    //sendMsg(getMsgForNick (nickname);
                                     break;
                                 } else {
                                     sendMsg("С этим логином уже авторизовались ");
@@ -66,6 +68,7 @@ public class ClientHandler {
                             boolean isRegistered = server.getAuthService().registration(tokens[1], tokens[2], tokens[3]);
                             if (isRegistered) {
                                 sendMsg(Command.REG_OK);
+
                             } else {
                                 sendMsg(Command.REG_NO);
                             }
@@ -103,6 +106,7 @@ public class ClientHandler {
                             addressMessage = msgArray[1];
                             privateMsg = msgArray[2];
                             server.sendPrivateMsg(this, addressMessage, privateMsg);
+
                         } else {
                             server.broadcastMsg(this, str);
                         }
@@ -143,4 +147,5 @@ public class ClientHandler {
     public String getLogin() {
         return login;
     }
+
 }

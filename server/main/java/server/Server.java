@@ -8,6 +8,8 @@ import java.net.Socket;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Server {
     private ServerSocket server;
@@ -15,7 +17,6 @@ public class Server {
     private final int PORT = 8190;
     private List<ClientHandler> clients;
     private AuthService authService;
-
 
     public Server() throws SQLException, ClassNotFoundException {
         clients = new CopyOnWriteArrayList<>();
@@ -31,6 +32,7 @@ public class Server {
             while (true) {
                 socket = server.accept();
                 System.out.println("Client connected");
+
                 ClientHandler current = new ClientHandler(this, socket);
             }
 
