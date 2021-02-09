@@ -19,18 +19,16 @@ public class ClientHandler {
     private String nickname;
     private String login;
     private File historyFile;
-    private ExecutorService service;
 
-    public ClientHandler(Server server, Socket socket, ExecutorService service) {
+    public ClientHandler(Server server, Socket socket) {
         try {
             this.server = server;
             this.socket = socket;
-            this.service = service;
 
             in = new DataInputStream(socket.getInputStream());
             out = new DataOutputStream(socket.getOutputStream());
 
-            service.execute(() -> {
+            new Thread(() -> {
                 try {
                     socket.setSoTimeout(120000);
                     //цикл аутентификации
@@ -128,7 +126,7 @@ public class ClientHandler {
                         e.printStackTrace();
                     }
                 }
-            });
+            }).start();
         } catch (IOException e) {
             e.printStackTrace();
         }

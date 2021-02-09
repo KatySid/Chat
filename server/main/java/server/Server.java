@@ -17,13 +17,9 @@ public class Server {
     private final int PORT = 8190;
     private List<ClientHandler> clients;
     private AuthService authService;
-    private ExecutorService service;
-
-
 
     public Server() throws SQLException, ClassNotFoundException {
         clients = new CopyOnWriteArrayList<>();
-        service = Executors.newCachedThreadPool();
 
         if(!DataBaseAuthService.connect()){
             throw new RuntimeException("не удалось подключиться к БД");
@@ -37,7 +33,7 @@ public class Server {
                 socket = server.accept();
                 System.out.println("Client connected");
 
-                ClientHandler current = new ClientHandler(this, socket, service);
+                ClientHandler current = new ClientHandler(this, socket);
             }
 
         
@@ -47,7 +43,6 @@ public class Server {
             DataBaseAuthService.desconnect();
             try {
                 server.close();
-                service.shutdown();
             } catch (IOException e) {
                 e.printStackTrace();
             }
